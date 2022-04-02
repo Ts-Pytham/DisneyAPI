@@ -1,6 +1,7 @@
 ﻿using Disney_API.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 
 namespace Disney_API.Controllers
 {
@@ -16,6 +17,8 @@ namespace Disney_API.Controllers
             _context = context;
         }
 
+        #region GET
+
         [HttpGet]
         public async Task<IActionResult> GetPersonajes()
         {
@@ -29,7 +32,7 @@ namespace Disney_API.Controllers
                 var result = await task;
 
                 List<Character> list = new();
-                foreach(var item in result)
+                foreach (var item in result)
                 {
                     list.Add(new Character
                     {
@@ -44,12 +47,12 @@ namespace Disney_API.Controllers
             return NotFound();
         }
 
-        [HttpGet("{nombre}")]
-        public async Task<IActionResult> GetPersonajeNombre(string nombre)
+        [HttpGet("{name}")]
+        public async Task<IActionResult> GetPersonajesName(string name)
         {
             if (_context == null)
                 return NotFound();
-            var personaje = _context.Personajes.OrderBy(x => x.Nombre == nombre).ToListAsync();
+            var personaje = _context.Personajes.OrderBy(x => x.Nombre == name).ToListAsync();
 
             var result = await personaje;
             if (result == null)
@@ -58,22 +61,48 @@ namespace Disney_API.Controllers
             return Ok(result);
         }
 
-        [HttpGet("{character}")]
-        public async Task<IActionResult> GetPersonaje(Personaje character)
+        [HttpGet("{age:int}")]
+        public async Task<IActionResult> GetPersonajesAge(int age)
         {
             if (_context == null)
                 return NotFound();
 
-            var data = _context.Personajes.Where(x => x.Idpersonaje == character.Idpersonaje || x.Imagen == character.Imagen || x.Peso == character.Peso || x.Edad == character.Edad).ToListAsync();
+            var personajes = _context.Personajes.OrderBy(x => x.Edad == age)
+                             .Select(x => new 
+                             { 
+                                 x.Nombre, 
+                                 x.Edad, 
+                                 x.Peso,
+                                 Peliculas = _context.Participacions.Where(m => m.Idpersonaje == x.Idpersonaje)
+                                             .Select(p => new { p.IdpeliculaNavigation}).ToList()
+                                 
+                             })
+                             .ToListAsync();
 
-            var result = await data;
+            var result = await personajes;
             if (result == null)
                 return NotFound();
 
             return Ok(result);
-
         }
 
+        [HttpGet("{movies}")]
+        public async Task<IActionResult> GetPersonajesName(int movies)
+        {
+            if (_context == null)
+                return NotFound();
+            var personajes = _context.Participacions.OrderBy(x => x.Idpelicula == movies).ToListAsync();
+
+            var result = await personajes;
+            if (result == null)
+                return NotFound();
+
+            return Ok(result);
+        }
+
+        #endregion
+
+        #region POST
         [HttpPost]
         public async Task<IActionResult> CrearPersonaje([FromBody] CharacterCreate? personaje)
         {
@@ -89,7 +118,10 @@ namespace Disney_API.Controllers
 
             return CreatedAtAction(nameof(CrearPersonaje), p);
         }
-        
+
+        #endregion
+
+        #region PUT
         [HttpPut("{id}")]
         public async Task<IActionResult> EditPersonaje(int id, [FromBody] CharacterUpdate character)
         {
@@ -101,10 +133,15 @@ namespace Disney_API.Controllers
 
             Personaje p = character;
             p.Idpersonaje = id;
-             _context.Personajes.Update(p);
+            _context.Personajes.Update(p);
             await _context.SaveChangesAsync();
             return Ok(p);
         }
-        
+        #endregion
+
+
+
+
+
     }
 }
