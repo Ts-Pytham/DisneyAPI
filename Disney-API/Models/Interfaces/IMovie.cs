@@ -5,10 +5,8 @@
         public string Imagen { get; set; }
         public string Titulo { get; set; } 
         public DateTime Fecha { get; set; }
-    }
-
-    public interface IMovieWithInfo
-    {
         public double Calificacion { get; set; }
     }
+
+  
 }

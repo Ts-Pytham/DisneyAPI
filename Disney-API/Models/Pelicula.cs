@@ -23,14 +23,8 @@ namespace Disney_API.Models
         }
     }
 
-    public class Movie : IMovie
-    {
-        public string Imagen { get; set; } = null!;
-        public string Titulo { get; set; } = null!;
-        public DateTime Fecha { get; set; }
-    }
 
-    public class MovieCreate : IMovieWithInfo, IMovie
+    public class MovieCreate : IMovie
     {
         public string Imagen { get; set; } = null!;
         public string Titulo { get; set; } = null!;

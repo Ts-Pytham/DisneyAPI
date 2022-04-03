@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Disney_API.Controllers
 {
@@ -47,12 +48,43 @@ namespace Disney_API.Controllers
             return NotFound();
         }
 
-        [HttpGet("{name}")]
-        public async Task<IActionResult> GetPersonajesName(string name)
+        [HttpGet("details")]
+        public async Task<IActionResult> GetCharactersDetails()
         {
             if (_context == null)
                 return NotFound();
-            var personaje = _context.Personajes.OrderBy(x => x.Nombre == name).ToListAsync();
+            var personajes = (from p in _context.Personajes
+                              select new
+                              {
+                                  Personaje = p,
+                                  Pelicula = GetMovieByID(p.Idpersonaje, _context.Participacions.ToList(), _context.Peliculas.ToList())
+
+                              }
+                              
+                             ).ToListAsync();
+
+
+            var result = await personajes;
+            if (result == null)
+                return NotFound();
+
+            return Ok(result);
+        }
+        [HttpGet("name/{nombre}")]
+        public async Task<IActionResult> GetPersonajesName(string nombre)
+        {
+            if (_context == null)
+                return NotFound();
+            var personaje = _context.Personajes.OrderBy(x => x.Idpersonaje)
+                            .Where(x => x.Nombre == nombre)
+                            .Select(x => new
+                            {
+                                x.Nombre,
+                                x.Edad,
+                                x.Peso,
+                                Peliculas = GetMovieByID(x.Idpersonaje, _context.Participacions.ToList(), _context.Peliculas.ToList())
+                            })
+                            .ToListAsync();
 
             var result = await personaje;
             if (result == null)
@@ -61,22 +93,22 @@ namespace Disney_API.Controllers
             return Ok(result);
         }
 
-        [HttpGet("{age:int}")]
-        public async Task<IActionResult> GetPersonajesAge(int age)
+        [HttpGet("age/{edad}")]
+       
+        public async Task<IActionResult> GetPersonajesAge(int edad)
         {
             if (_context == null)
                 return NotFound();
 
-            var personajes = _context.Personajes.OrderBy(x => x.Edad == age)
-                             .Select(x => new 
-                             { 
-                                 x.Nombre, 
-                                 x.Edad, 
+            var personajes = _context.Personajes.OrderBy(x => x.Edad)
+                             .Where(x => x.Edad == edad)
+                             .Select(x => new
+                             {
+                                 x.Nombre,
+                                 x.Edad,
                                  x.Peso,
-                                 Peliculas = _context.Participacions.Where(m => m.Idpersonaje == x.Idpersonaje)
-                                             .Select(p => new { p.IdpeliculaNavigation}).ToList()
-                                 
-                             })
+                                 Peliculas = GetMovieByID(x.Idpersonaje, _context.Participacions.ToList(), _context.Peliculas.ToList())
+                              })
                              .ToListAsync();
 
             var result = await personajes;
@@ -86,12 +118,30 @@ namespace Disney_API.Controllers
             return Ok(result);
         }
 
-        [HttpGet("{movies}")]
-        public async Task<IActionResult> GetPersonajesName(int movies)
+        
+        [HttpGet("movies/{idMovie}")]
+        public async Task<IActionResult> GetPersonajesByIdMovie(int idMovie)
         {
             if (_context == null)
                 return NotFound();
-            var personajes = _context.Participacions.OrderBy(x => x.Idpelicula == movies).ToListAsync();
+            var personajes = (from p in _context.Participacions
+                              join pe in _context.Personajes on p.Idpersonaje equals pe.Idpersonaje
+                              join m in _context.Peliculas on p.Idpelicula equals m.Idpelicula
+                              where m.Idpelicula == idMovie
+                              select new {
+                                  pe.Nombre, 
+                                  pe.Edad,
+                                  pe.Peso,
+                                  Peliculas = new 
+                                    {
+                                      m.Titulo,
+                                      m.Fecha,
+                                      m.Calificacion,
+                                      m.Imagen
+                                    }
+                                  }
+                             ).ToListAsync();
+                             
 
             var result = await personajes;
             if (result == null)
@@ -100,6 +150,19 @@ namespace Disney_API.Controllers
             return Ok(result);
         }
 
+        private static dynamic? GetMovieByID(int id, List<Participacion> participacions, List<Pelicula> peliculas)
+        {
+
+            var movies = (from p in participacions
+                          join pe in peliculas on p.Idpelicula equals pe.Idpelicula
+                          where p.Idpersonaje == id
+                          select new { pe.Titulo, pe.Fecha, pe.Calificacion, pe.Imagen }).ToList();
+
+            if (movies == null)
+                return null;
+
+            return movies;
+        }
         #endregion
 
         #region POST

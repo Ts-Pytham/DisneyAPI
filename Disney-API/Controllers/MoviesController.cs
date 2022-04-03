@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 namespace Disney_API.Controllers
 {
+    [Route("api/[controller]")]
     public class MoviesController : ControllerBase
     {
         private readonly DisneyContext? _context;
@@ -13,6 +14,7 @@ namespace Disney_API.Controllers
         }
 
         #region GET
+
         [HttpGet]
         public async Task<IActionResult> GetMovies()
         {
@@ -21,25 +23,63 @@ namespace Disney_API.Controllers
 
             if (_context.Peliculas.Any())
             {
-                var task = _context.Peliculas.OrderBy(x => x.Idpelicula).ToListAsync();
+                var task = _context.Peliculas.OrderBy(x => x.Idpelicula)
+                            .Select(x => new
+                            {
+                                x.Imagen,
+                                x.Titulo,
+                                x.Fecha
+                            })
+                            .ToListAsync();
 
-                var result = await task;
+                var result = await task;     
 
-                List<Movie> list = new();
-                foreach (var item in result)
-                {
-                    list.Add(new Movie
-                    {
-                        Imagen = item.Imagen,
-                        Titulo = item.Titulo,
-                        Fecha = item.Fecha
-                    });
-                }
-
-                return Ok(list);
+                return Ok(result);
             }
 
             return NotFound();
+        }
+
+        [HttpGet("details")]
+        public async Task<IActionResult> GetMoviesDetails()
+        {
+            if (_context == null)
+                return NotFound();
+            var movies = (from p in _context.Peliculas     
+                              select new
+                              {
+                                  Pelicula = p,
+                                  Personaje = GetCharacterById(p.Idpelicula,_context.Participacions.ToList(), _context.Personajes.ToList())
+                                  
+                              }
+
+                             ).ToListAsync();
+
+
+            var result = await movies;
+            if (result == null)
+                return NotFound();
+
+            return Ok(result);
+        }
+
+        private static dynamic? GetCharacterById(int id, List<Participacion> participacions, List<Personaje> personajes)
+        {
+            var list = (from pe in participacions
+                        join c in personajes on pe.Idpersonaje equals c.Idpersonaje
+                        where pe.Idpelicula == id
+                        select new
+                        {
+                            c.Imagen,
+                            c.Nombre,
+                            c.Edad,
+                            c.Peso,
+                            c.Historia
+                        }
+                        ).ToList();
+
+            return list ?? null;
+
         }
         #endregion
 
