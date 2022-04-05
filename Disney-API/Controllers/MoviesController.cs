@@ -49,8 +49,8 @@ namespace Disney_API.Controllers
                               select new
                               {
                                   Pelicula = p,
-                                  Personaje = GetCharacterById(p.Idpelicula,_context.Participacions.ToList(), _context.Personajes.ToList())
-                                  
+                                  Personaje = GetCharacterById(p.Idpelicula,_context.Participacions.ToList(), _context.Personajes.ToList()),
+                                  Genero = GetGenresById(p.Idpelicula, _context.GeneroPeliculas.ToList(), _context.Generos.ToList())
                               }
 
                              ).ToListAsync();
@@ -58,6 +58,27 @@ namespace Disney_API.Controllers
 
             var result = await movies;
             if (result == null)
+                return NotFound();
+
+            return Ok(result);
+        }
+
+        [HttpGet("name/{nombre}")]
+        public async Task<IActionResult> GetMoviesByName(string nombre)
+        {
+            if (_context == null)
+                return NotFound();
+            var movies = (from p in _context.Peliculas
+                          where p.Titulo == nombre
+                          select new
+                          {
+                              Pelicula = p,
+                              Personaje = GetCharacterById(p.Idpelicula, _context.Participacions.ToList(), _context.Personajes.ToList()),
+                              Genero = GetGenresById(p.Idpelicula, _context.GeneroPeliculas.ToList(), _context.Generos.ToList())
+                          }).ToListAsync();
+
+            var result = await movies;
+            if (result == null || result.Count == 0)
                 return NotFound();
 
             return Ok(result);
@@ -81,6 +102,23 @@ namespace Disney_API.Controllers
             return list ?? null;
 
         }
+        private static dynamic? GetGenresById(int id, List<GeneroPelicula> generoPeliculas, List<Genero> generos)
+        {
+            var list = (from ge in generoPeliculas
+                        join g in generos on ge.Idgenero equals g.Idgenero
+                        where ge.Idpelicula == id
+                        orderby ge.Idgenero
+                        select new
+                        {
+                            g.Idgenero,
+                            g.Imagen,
+                            g.Nombre
+
+                        }
+                        ).ToList();
+
+            return list ?? null;
+        }
         #endregion
 
         #region POST
@@ -101,7 +139,7 @@ namespace Disney_API.Controllers
         }
         #endregion
 
-        #region
+        #region PUT
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateMovie(int id, [FromBody] MovieUpdate movie)
         {

@@ -1,3 +1,4 @@
+using Disney_API.ModelBinder;
 using Disney_API.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
@@ -12,7 +13,18 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddDbContext<DisneyContext>();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddSwaggerGen(options =>
+    {
+        options.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
+    }
+);
+builder.Services.AddControllers(opt => {
+    opt.ModelBinderProviders.Insert(0, new MyCustomBinderProvider());
+});
+
 var app = builder.Build();
+
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

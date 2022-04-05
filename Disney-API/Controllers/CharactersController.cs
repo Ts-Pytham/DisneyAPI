@@ -1,4 +1,5 @@
-﻿using Disney_API.Models;
+﻿using Disney_API.ModelBinder;
+using Disney_API.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
@@ -20,32 +21,92 @@ namespace Disney_API.Controllers
 
         #region GET
 
-        [HttpGet]
-        public async Task<IActionResult> GetPersonajes()
+        [HttpGet()]
+        public async Task<IActionResult> GetCharacters([FromQuery] GetRequestCharacters request)
         {
             if (_context == null)
                 return NotFound();
 
             if (_context.Personajes.Any())
             {
-                var task = _context.Personajes.OrderBy(x => x.Idpersonaje).ToListAsync();
 
-                var result = await task;
+                /* Conditions*/
+                int cases = 0;
+                if (request.Name != null) cases = 1;
+                else if (request.Movies != null) cases = 2;
+                else if (request.Age != null) cases = 3;
 
-                List<Character> list = new();
-                foreach (var item in result)
+                if (request.Name != null && request.Age != null) cases = 4;
+                else if (request.Name != null && request.Movies != null) cases = 5;
+                else if (request.Age != null && request.Movies != null) cases = 6;
+                else if (request.Name != null && request.Age != null && request.Movies != null) cases = 7;
+                Debug.WriteLine(cases);
+                if (cases == 0)
                 {
-                    list.Add(new Character
-                    {
-                        Imagen = item.Imagen,
-                        Nombre = item.Nombre
-                    });
-                }
+                    var task = _context.Personajes.OrderBy(x => x.Idpersonaje).ToListAsync();
 
-                return Ok(list);
+                    var result = await task;
+
+                    List<Character> list = new();
+                    foreach (var item in result)
+                    {
+                        list.Add(new Character
+                        {
+                            Imagen = item.Imagen,
+                            Nombre = item.Nombre
+                        });
+                    }
+
+                    return Ok(list);
+                }
+                else if (cases == 1)
+                    return await GetPersonajesName(request.Name!);
+                else if (cases == 2)
+                {
+                    return await GetPersonajesByIdMovie(request.Movies.GetValueOrDefault());
+
+
+                }
+                else if (cases == 3)
+                {
+                    
+                    return await GetPersonajesAge(request.Age.GetValueOrDefault());
+                }
+                else
+                {
+                    
+                    var task = (from p in _context.Personajes
+                                join pa in _context.Participacions on p.Idpersonaje equals pa.Idpersonaje
+                                where Conditions(p.Nombre, p.Edad, pa.Idpelicula, request, cases)
+                                orderby p.Idpersonaje
+                                select new
+                                {
+                                    Personaje = p,
+                                    Pelicula = GetMovieByID(pa.Idpelicula, _context.Participacions.ToList(), _context.Peliculas.ToList())
+
+                                }
+                                ).ToListAsync();
+
+                    var result = await task;
+                    if(result == null || result.Count == 0)
+                        return NotFound(result);
+
+                    return Ok(result);
+                }
             }
 
             return NotFound();
+        }
+
+        private static bool Conditions(string name, int age, int movies, GetRequestCharacters request, int cases)
+        {
+
+            if(cases == 4) return request.Name == name && request.Age == age;
+            else if(cases == 5) return request.Name == name && request.Movies == movies;
+            else if(cases == 6) return request.Age == age && request.Movies == movies;
+            else if(cases == 7) return request.Name == name && request.Age == age && request.Movies == movies;
+            return false;
+ 
         }
 
         [HttpGet("details")]
@@ -92,9 +153,9 @@ namespace Disney_API.Controllers
 
             return Ok(result);
         }
-
+      
+      
         [HttpGet("age/{edad}")]
-       
         public async Task<IActionResult> GetPersonajesAge(int edad)
         {
             if (_context == null)
