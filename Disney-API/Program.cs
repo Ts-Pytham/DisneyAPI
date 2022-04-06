@@ -1,7 +1,11 @@
 using Disney_API.ModelBinder;
 using Disney_API.Models;
+using Disney_API.Services;
+using Microsoft.AspNetCore.Authentication;
+using Disney_API.Security;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,15 +16,18 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddDbContext<DisneyContext>();
 builder.Services.AddSwaggerGen();
-
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddAuthentication("BasicAuthentication")
+                .AddScheme<AuthenticationSchemeOptions, BasicAuthHandler>("BasicAuthentication", null);
 builder.Services.AddSwaggerGen(options =>
-    {
+{
         options.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
-    }
+}
 );
 builder.Services.AddControllers(opt => {
     opt.ModelBinderProviders.Insert(0, new MyCustomBinderProvider());
 });
+
 
 var app = builder.Build();
 
@@ -35,6 +42,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

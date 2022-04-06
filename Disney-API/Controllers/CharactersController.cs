@@ -1,5 +1,7 @@
 ﻿using Disney_API.ModelBinder;
 using Disney_API.Models;
+using Disney_API.Models.Schemes;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
@@ -9,6 +11,7 @@ namespace Disney_API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class CharactersController : ControllerBase
     {
         
@@ -43,21 +46,21 @@ namespace Disney_API.Controllers
                 Debug.WriteLine(cases);
                 if (cases == 0)
                 {
-                    var task = _context.Personajes.OrderBy(x => x.Idpersonaje).ToListAsync();
+                    //_context.Personajes.OrderBy(x => x.Idpersonaje).ToListAsync();
+                    var task = (from p in _context.Personajes
+                                orderby p.Idpersonaje
+                                select new
+                                {
+                                    p.Imagen,
+                                    p.Nombre   
+                                }).ToListAsync();
 
                     var result = await task;
 
-                    List<Character> list = new();
-                    foreach (var item in result)
-                    {
-                        list.Add(new Character
-                        {
-                            Imagen = item.Imagen,
-                            Nombre = item.Nombre
-                        });
-                    }
+                    if(result == null || result.Count == 0)
+                        return NotFound();
 
-                    return Ok(list);
+                    return Ok(result);
                 }
                 else if (cases == 1)
                     return await GetPersonajesName(request.Name!);

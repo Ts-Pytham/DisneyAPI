@@ -1,9 +1,13 @@
 ﻿using Disney_API.Models;
+using Disney_API.Models.Schemes;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 namespace Disney_API.Controllers
 {
     [Route("api/[controller]")]
+    [ApiController]
+    [Authorize]
     public class MoviesController : ControllerBase
     {
         private readonly DisneyContext? _context;

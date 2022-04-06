@@ -21,11 +21,13 @@ namespace Disney_API.Models
         public virtual DbSet<Participacion> Participacions { get; set; } = null!;
         public virtual DbSet<Pelicula> Peliculas { get; set; } = null!;
         public virtual DbSet<Personaje> Personajes { get; set; } = null!;
+        public virtual DbSet<Usuario> Usuarios { get; set; } = null!;
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)
             {
+
                 optionsBuilder.UseSqlServer("Server=JOHAN; Database=Disney; Trusted_Connection=True;");
             }
         }
@@ -128,6 +130,19 @@ namespace Disney_API.Models
                 entity.Property(e => e.Imagen).HasColumnType("text");
 
                 entity.Property(e => e.Nombre).HasColumnType("text");
+            });
+
+            modelBuilder.Entity<Usuario>(entity =>
+            {
+                entity.ToTable("Usuario");
+
+                entity.Property(e => e.Id)
+                    .ValueGeneratedNever()
+                    .HasColumnName("ID");
+
+                entity.Property(e => e.Email).HasMaxLength(50);
+
+                entity.Property(e => e.Password).HasMaxLength(129);
             });
 
             OnModelCreatingPartial(modelBuilder);
