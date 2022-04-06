@@ -6,6 +6,8 @@ using Disney_API.Security;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
 using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,8 +19,10 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddDbContext<DisneyContext>();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IUserService, UserService>();
+/*
 builder.Services.AddAuthentication("BasicAuthentication")
                 .AddScheme<AuthenticationSchemeOptions, BasicAuthHandler>("BasicAuthentication", null);
+*/
 builder.Services.AddSwaggerGen(options =>
 {
         options.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
@@ -26,6 +30,23 @@ builder.Services.AddSwaggerGen(options =>
 );
 builder.Services.AddControllers(opt => {
     opt.ModelBinderProviders.Insert(0, new MyCustomBinderProvider());
+});
+
+var key = Encoding.ASCII.GetBytes(builder.Configuration.GetValue<string>("SecretKey"));
+
+builder.Services.AddAuthentication(x => {
+    x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(x => {
+    x.RequireHttpsMetadata = false;
+    x.SaveToken = true;
+    x.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(key),
+        ValidateIssuer = false,
+        ValidateAudience = false
+    };
 });
 
 
@@ -43,6 +64,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
+
 app.UseAuthorization();
 
 app.MapControllers();

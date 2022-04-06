@@ -8,6 +8,7 @@ using System.Text.Encodings.Web;
 
 namespace Disney_API.Security
 {
+    [Obsolete("Fue sustituido por un token con JWT")]
     public class BasicAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
     {
         private readonly IUserService _userService;

@@ -4,6 +4,11 @@ using Disney_API.Security;
 using Microsoft.AspNetCore.Mvc;
 using Disney_API.Models.Schemes;
 using Microsoft.AspNetCore.Authorization;
+using System.Text;
+using System.Security.Claims;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+
 namespace Disney_API.Controllers
 {
     [Route("api/[controller]")]
@@ -11,10 +16,11 @@ namespace Disney_API.Controllers
     public class AuthController : ControllerBase
     {
         private readonly DisneyContext? _context;
-
-        public AuthController(DisneyContext context)
+        private readonly IConfiguration _configuration;
+        public AuthController(DisneyContext context, IConfiguration configuration)
         {
             _context = context;
+            _configuration = configuration;
         }
 
         [HttpPost("register")]
@@ -52,9 +58,28 @@ namespace Disney_API.Controllers
             user.Password = ComputeHash.ToSHA512(user.Password);
 
             if (await service.IsUser(user))
-                return Ok(user);
+            {
+                var secretKey = _configuration.GetValue<string>("SecretKey");
+                var key = Encoding.ASCII.GetBytes(secretKey!);
 
-            return Forbid("El usuario/clave es incorrecto");
+                var claims = new ClaimsIdentity();
+                claims.AddClaim(new Claim(ClaimTypes.NameIdentifier, user.Email));
+
+                var tokenDescriptor = new SecurityTokenDescriptor
+                {
+                    Subject = claims,
+                    Expires = DateTime.UtcNow.AddHours(12), //12 horas de validez del token
+                    SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+                };
+
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var createdToken = tokenHandler.CreateToken(tokenDescriptor);
+
+                string bearer_token = tokenHandler.WriteToken(createdToken);
+                return Ok(bearer_token);
+            }
+
+            return Forbid();
             
         }
         

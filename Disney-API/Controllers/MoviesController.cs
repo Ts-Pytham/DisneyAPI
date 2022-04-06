@@ -18,7 +18,7 @@ namespace Disney_API.Controllers
         }
 
         #region GET
-
+        [AllowAnonymous]
         [HttpGet]
         public async Task<IActionResult> GetMovies()
         {
@@ -43,7 +43,7 @@ namespace Disney_API.Controllers
 
             return NotFound();
         }
-
+        [AllowAnonymous]
         [HttpGet("details")]
         public async Task<IActionResult> GetMoviesDetails()
         {
@@ -66,7 +66,7 @@ namespace Disney_API.Controllers
 
             return Ok(result);
         }
-
+        [AllowAnonymous]
         [HttpGet("name/{nombre}")]
         public async Task<IActionResult> GetMoviesByName(string nombre)
         {

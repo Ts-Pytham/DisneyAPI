@@ -23,8 +23,8 @@ namespace Disney_API.Controllers
         }
 
         #region GET
-
-        [HttpGet()]
+        [AllowAnonymous]
+        [HttpGet]
         public async Task<IActionResult> GetCharacters([FromQuery] GetRequestCharacters request)
         {
             if (_context == null)
@@ -111,7 +111,7 @@ namespace Disney_API.Controllers
             return false;
  
         }
-
+        [AllowAnonymous]
         [HttpGet("details")]
         public async Task<IActionResult> GetCharactersDetails()
         {
@@ -134,6 +134,7 @@ namespace Disney_API.Controllers
 
             return Ok(result);
         }
+        [AllowAnonymous]
         [HttpGet("name/{nombre}")]
         public async Task<IActionResult> GetPersonajesName(string nombre)
         {
@@ -156,8 +157,8 @@ namespace Disney_API.Controllers
 
             return Ok(result);
         }
-      
-      
+
+        [AllowAnonymous]
         [HttpGet("age/{edad}")]
         public async Task<IActionResult> GetPersonajesAge(int edad)
         {
@@ -182,7 +183,7 @@ namespace Disney_API.Controllers
             return Ok(result);
         }
 
-        
+        [AllowAnonymous]
         [HttpGet("movies/{idMovie}")]
         public async Task<IActionResult> GetPersonajesByIdMovie(int idMovie)
         {
