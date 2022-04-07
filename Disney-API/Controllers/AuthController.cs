@@ -10,6 +10,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using Disney_API.Utilities;
 using System.Diagnostics;
+using DotEnv.Core;
 
 namespace Disney_API.Controllers
 {
@@ -18,13 +19,11 @@ namespace Disney_API.Controllers
     public class AuthController : ControllerBase
     {
         private readonly DisneyContext? _context;
-        private readonly IConfiguration _configuration;
         private readonly ITokenService tokenService;
         public AuthController(DisneyContext context, IConfiguration configuration)
         {
             _context = context;
-            _configuration = configuration;
-            tokenService = new TokenService(configuration);
+            tokenService = new TokenService();
         }
 
         [HttpPost("register")]
@@ -56,8 +55,9 @@ namespace Disney_API.Controllers
                                  "El token se vence cada 4 horas.\n" +
                                  $"Token: {tokenService.GetToken(user.Email)}";
             string Subject = "DISNEY API, Registro exitoso";
-
-            var send = new Utilities.SendGrid(_configuration.GetValue<string>("SENDGRID_API_KEY"), EmailFrom, UserEmailFrom, UserEmailTo, Subject, EmailTo, PlainTextContent, HtmlContent); ;
+            var reader = new EnvReader();
+            
+            var send = new Utilities.SendGrid(reader["SecretKey"], EmailFrom, UserEmailFrom, UserEmailTo, Subject, EmailTo, PlainTextContent, HtmlContent); ;
             await send.SendEmail();
             return CreatedAtAction(nameof(Register), user);
 

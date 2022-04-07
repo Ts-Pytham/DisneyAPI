@@ -1,4 +1,5 @@
-﻿using Microsoft.IdentityModel.Tokens;
+﻿using DotEnv.Core;
+using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -7,16 +8,16 @@ namespace Disney_API.Services
 {
     public class TokenService : ITokenService
     {
-        private readonly IConfiguration _configuration;
 
-        public TokenService(IConfiguration configuration)
+        private readonly EnvReader reader;
+        public TokenService()
         {
-            _configuration = configuration;
+            reader = new EnvReader();
         }
 
         public string GetToken(string Email)
         {
-            var secretKey = _configuration.GetValue<string>("SecretKey");
+            var secretKey = reader["SENDGRID_API_KEY"];
             var key = Encoding.ASCII.GetBytes(secretKey!);
 
             var claims = new ClaimsIdentity();
@@ -25,7 +26,7 @@ namespace Disney_API.Services
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = claims,
-                Expires = DateTime.UtcNow.AddHours(12), //12 horas de validez del token
+                Expires = DateTime.UtcNow.AddHours(6), //6 horas de validez del token
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
 

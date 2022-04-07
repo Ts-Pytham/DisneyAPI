@@ -1,13 +1,10 @@
 using Disney_API.ModelBinder;
 using Disney_API.Models;
 using Disney_API.Services;
-using Microsoft.AspNetCore.Authentication;
-using Disney_API.Security;
-using Microsoft.EntityFrameworkCore;
-using System.Reflection;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using DotEnv.Core;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,7 +29,11 @@ builder.Services.AddControllers(opt => {
     opt.ModelBinderProviders.Insert(0, new MyCustomBinderProvider());
 });
 
-var key = Encoding.ASCII.GetBytes(builder.Configuration.GetValue<string>("SecretKey"));
+var env = new EnvLoader();
+env.AddEnvFile("Config.env")
+   .Load();
+var reader = new EnvReader();
+var key = Encoding.ASCII.GetBytes(reader["SecretKey"]);
 
 builder.Services.AddAuthentication(x => {
     x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
