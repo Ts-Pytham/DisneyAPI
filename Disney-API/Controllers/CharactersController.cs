@@ -129,7 +129,7 @@ namespace Disney_API.Controllers
 
 
             var result = await personajes;
-            if (result == null)
+            if (result == null || result.Count == 0)
                 return NotFound();
 
             return Ok(result);
@@ -152,7 +152,7 @@ namespace Disney_API.Controllers
                             .ToListAsync();
 
             var result = await personaje;
-            if (result == null)
+            if (result == null || result.Count == 0)
                 return NotFound();
 
             return Ok(result);
@@ -177,7 +177,7 @@ namespace Disney_API.Controllers
                              .ToListAsync();
 
             var result = await personajes;
-            if (result == null)
+            if (result == null || result.Count == 0)
                 return NotFound();
 
             return Ok(result);
@@ -209,7 +209,7 @@ namespace Disney_API.Controllers
                              
 
             var result = await personajes;
-            if (result == null)
+            if (result == null || result.Count == 0)
                 return NotFound();
 
             return Ok(result);
