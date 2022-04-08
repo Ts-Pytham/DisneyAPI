@@ -5,7 +5,7 @@
         public string Imagen { get; set; }
         public string Titulo { get; set; } 
         public DateTime Fecha { get; set; }
-        public double Calificacion { get; set; }
+        public float Calificacion { get; set; }
     }
 
   

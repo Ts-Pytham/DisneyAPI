@@ -40,10 +40,10 @@ namespace Disney_API.Controllers
                 else if (request.Age != null) cases = 3;
 
                 if (request.Name != null && request.Age != null) cases = 4;
-                else if (request.Name != null && request.Movies != null) cases = 5;
-                else if (request.Age != null && request.Movies != null) cases = 6;
-                else if (request.Name != null && request.Age != null && request.Movies != null) cases = 7;
-                Debug.WriteLine(cases);
+                else if (request.Name != null && request.Movies != null) cases = 4;
+                else if (request.Age != null && request.Movies != null) cases = 4;
+                else if (request.Name != null && request.Age != null && request.Movies != null) cases = 4;
+      
                 if (cases == 0)
                 {
                     //_context.Personajes.OrderBy(x => x.Idpersonaje).ToListAsync();
@@ -60,6 +60,7 @@ namespace Disney_API.Controllers
                     if(result == null || result.Count == 0)
                         return NotFound();
 
+                    
                     return Ok(result);
                 }
                 else if (cases == 1)
@@ -78,39 +79,90 @@ namespace Disney_API.Controllers
                 else
                 {
                     
-                    var task = (from p in _context.Personajes
-                                join pa in _context.Participacions on p.Idpersonaje equals pa.Idpersonaje
-                                where Conditions(p.Nombre, p.Edad, pa.Idpelicula, request, cases)
-                                orderby p.Idpersonaje
-                                select new
-                                {
-                                    Personaje = p,
-                                    Pelicula = GetMovieByID(pa.Idpelicula, _context.Participacions.ToList(), _context.Peliculas.ToList())
+                   var list1 = (from p in _context.Personajes  
+                               orderby p.Idpersonaje 
+                               where p.Nombre == request.Name                        
+                               select new
+                               {
+                                   p.Idpersonaje,
+                                   p.Nombre,
+                                   p.Edad,
+                                   p.Peso,
 
-                                }
-                                ).ToListAsync();
+                               }
+                               ).ToListAsync();
 
-                    var result = await task;
-                    if(result == null || result.Count == 0)
-                        return NotFound(result);
+                    var result1 = await list1;
+
+                    var list2 = (from p in _context.Personajes
+                                 orderby p.Idpersonaje
+                                 where p.Edad == request.Age
+                                 select new
+                                 {
+                                     p.Idpersonaje,
+                                     p.Nombre,
+                                     p.Edad,
+                                     p.Peso,
+
+                                 }
+                               ).ToListAsync();
+
+                    var result2 = await list2;
+
+                    var list3 = (from p in _context.Personajes
+                                 orderby p.Idpersonaje
+                                 join pa in _context.Participacions on p.Idpersonaje equals pa.Idpersonaje
+                                 where pa.Idpelicula == request.Movies
+                                 select new
+                                 {
+                                     p.Idpersonaje,
+                                     p.Nombre,
+                                     p.Edad,
+                                     p.Peso,
+
+                                 }
+                               ).ToListAsync();
+                    
+                  
+                    var result3 = await list3;
+                    
+                    if(request.Name == null)
+                    {
+                        result1 = result2;
+                    }
+                    if(request.Age == null)
+                    {
+                        result2 = result1;
+                    }
+                    if(request.Movies == null)
+                    {
+                        result3 = result2;
+                    }
+
+                    var Intersect = result1.Intersect(result2).Intersect(result3);
+                    
+                    if (!Intersect.Any())
+                        return NotFound();
+
+                    var result = (from p in Intersect
+                                  select new
+                                  {
+                                      p.Nombre,
+                                      p.Edad,
+                                      p.Peso,
+                                      Pelicula = GetMovieByID(p.Idpersonaje, _context.Participacions.ToList(), _context.Peliculas.ToList())
+                                  }
+                               ).ToList();
 
                     return Ok(result);
+
                 }
             }
 
             return NotFound();
         }
 
-        private static bool Conditions(string name, int age, int movies, GetRequestCharacters request, int cases)
-        {
 
-            if(cases == 4) return request.Name == name && request.Age == age;
-            else if(cases == 5) return request.Name == name && request.Movies == movies;
-            else if(cases == 6) return request.Age == age && request.Movies == movies;
-            else if(cases == 7) return request.Name == name && request.Age == age && request.Movies == movies;
-            return false;
- 
-        }
         [AllowAnonymous]
         [HttpGet("details")]
         public async Task<IActionResult> GetCharactersDetails()

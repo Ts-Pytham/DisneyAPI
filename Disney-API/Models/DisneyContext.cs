@@ -109,9 +109,11 @@ namespace Disney_API.Models
 
                 entity.Property(e => e.Fecha).HasColumnType("date");
 
-                entity.Property(e => e.Imagen).HasColumnType("text");
+                entity.Property(e => e.Imagen).HasMaxLength(100);
 
-                entity.Property(e => e.Titulo).HasColumnType("text");
+                entity.Property(e => e.Titulo).HasMaxLength(50);
+
+                entity.Property(e => e.Calificacion).HasColumnType("float");
             });
 
             modelBuilder.Entity<Personaje>(entity =>
@@ -125,11 +127,11 @@ namespace Disney_API.Models
                     .ValueGeneratedNever()
                     .HasColumnName("IDPersonaje");
 
-                entity.Property(e => e.Historia).HasColumnType("text");
+                entity.Property(e => e.Historia).HasMaxLength(int.MaxValue);
 
-                entity.Property(e => e.Imagen).HasColumnType("text");
+                entity.Property(e => e.Imagen).HasMaxLength(10);
 
-                entity.Property(e => e.Nombre).HasColumnType("text");
+                entity.Property(e => e.Nombre).HasMaxLength(50);
             });
 
             modelBuilder.Entity<Usuario>(entity =>

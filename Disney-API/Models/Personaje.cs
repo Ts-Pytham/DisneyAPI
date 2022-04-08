@@ -1,10 +1,11 @@
-﻿using Disney_API.Models.Schemes;
+﻿using Disney_API.Models.Interfaces;
+using Disney_API.Models.Schemes;
 using System;
 using System.Collections.Generic;
 
 namespace Disney_API.Models
 {
-    public partial class Personaje
+    public partial class Personaje : ICharacter
     {
         public int Idpersonaje { get; set; }
         public string Imagen { get; set; } = null!;
