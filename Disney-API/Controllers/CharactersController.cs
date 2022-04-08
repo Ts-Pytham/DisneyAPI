@@ -11,7 +11,7 @@ namespace Disney_API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    
     public class CharactersController : ControllerBase
     {
         
@@ -287,6 +287,7 @@ namespace Disney_API.Controllers
         #endregion
 
         #region POST
+        
         [HttpPost]
         public async Task<IActionResult> CrearPersonaje([FromBody] CharacterCreate? personaje)
         {
@@ -307,13 +308,13 @@ namespace Disney_API.Controllers
 
         #region PUT
         [HttpPut("{id}")]
-        public async Task<IActionResult> EditPersonaje(int id, [FromBody] CharacterUpdate character)
+        public async Task<IActionResult> EditCharacter(int id, [FromBody] CharacterUpdate character)
         {
             if (_context == null || !ModelState.IsValid)
                 return BadRequest(ModelState);
 
             if (id <= 0 && _context.Personajes.Where(x => x.Idpersonaje == id).Any() == false)
-                return BadRequest();
+                return NotFound("No se encontró el personaje");
 
             Personaje p = character;
             p.Idpersonaje = id;
@@ -324,7 +325,23 @@ namespace Disney_API.Controllers
         #endregion
 
 
+        #region DELETE
+        
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteCharacterById(int id)
+        {
+            if(_context == null)
+                return BadRequest();
+            var list = await _context.Personajes.Where(x => x.Idpersonaje == id).ToListAsync();
+            var p = list.Count > 0 ? list[0] : null;
+            if(p == null)
+                return NotFound("No se encontró el personaje");
 
+            _context.Personajes.Remove(p);
+            await _context.SaveChangesAsync();
+            return Ok(p);
+        }
+        #endregion
 
 
     }
