@@ -34,16 +34,12 @@ namespace Disney_API.Controllers
             {
 
                 /* Conditions*/
-                int cases = 0;
-                if (request.Name != null) cases = 1;
-                else if (request.Movies != null) cases = 2;
-                else if (request.Age != null) cases = 3;
+                int cases = -1;
+                if (request.Name != null && request.Movies == null && request.Age == null) cases = 1;
+                else if (request.Movies != null && request.Name == null && request.Age == null) cases = 2;
+                else if (request.Age != null && request.Name == null && request.Movies == null) cases = 3;
+                else if (request.Name == null && request.Movies == null && request.Age == null) cases = 0;
 
-                if (request.Name != null && request.Age != null) cases = 4;
-                else if (request.Name != null && request.Movies != null) cases = 4;
-                else if (request.Age != null && request.Movies != null) cases = 4;
-                else if (request.Name != null && request.Age != null && request.Movies != null) cases = 4;
-      
                 if (cases == 0)
                 {
                     //_context.Personajes.OrderBy(x => x.Idpersonaje).ToListAsync();
@@ -273,7 +269,15 @@ namespace Disney_API.Controllers
             var movies = (from p in participacions
                           join pe in peliculas on p.Idpelicula equals pe.Idpelicula
                           where p.Idpersonaje == id
-                          select new { pe.Titulo, pe.Fecha, pe.Calificacion, pe.Imagen }).ToList();
+                          select new 
+                          {   
+                              pe.Idpelicula,
+                              pe.Imagen,
+                              pe.Titulo, 
+                              pe.Fecha, 
+                              pe.Calificacion,
+                              
+                          }).ToList();
 
             if (movies == null)
                 return null;
