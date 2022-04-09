@@ -52,7 +52,8 @@ namespace Disney_API.Models
 
             modelBuilder.Entity<GeneroPelicula>(entity =>
             {
-                entity.HasNoKey();
+                entity.HasKey(e => e.ID)
+                      .HasName("PK_GeneroPelicula");
 
                 entity.ToTable("GeneroPelicula");
 
@@ -75,7 +76,8 @@ namespace Disney_API.Models
 
             modelBuilder.Entity<Participacion>(entity =>
             {
-                entity.HasNoKey();
+                entity.HasKey(e => e.ID)
+                      .HasName("PK_Participacion");
 
                 entity.ToTable("Participacion");
 

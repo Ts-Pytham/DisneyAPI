@@ -9,4 +9,5 @@ namespace Disney_API.ModelBinder
         public int? Age { get; set; } = null!;
         public int? Movies { get; set; } = null!;
     }
+
 }

@@ -10,5 +10,6 @@ namespace Disney_API.Models.Schemes
         public int Edad { get; set; }
         public double Peso { get; set; }
         public string Historia { get; set; } = null!;
+        public List<int> IDMovies { get; set; } = new List<int>();
     }
 }

@@ -11,7 +11,7 @@ namespace Disney_API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    
+    [Authorize]
     public class CharactersController : ControllerBase
     {
         
@@ -64,12 +64,9 @@ namespace Disney_API.Controllers
                 else if (cases == 2)
                 {
                     return await GetPersonajesByIdMovie(request.Movies.GetValueOrDefault());
-
-
                 }
                 else if (cases == 3)
                 {
-                    
                     return await GetPersonajesAge(request.Age.GetValueOrDefault());
                 }
                 else
@@ -287,9 +284,9 @@ namespace Disney_API.Controllers
         #endregion
 
         #region POST
-        
+        [AllowAnonymous]
         [HttpPost]
-        public async Task<IActionResult> CrearPersonaje([FromBody] CharacterCreate? personaje)
+        public async Task<IActionResult> CreateCharacter([FromBody] CharacterCreate? personaje)
         {
             if (personaje == null || !ModelState.IsValid || _context == null)
                 return BadRequest(ModelState);
@@ -297,17 +294,27 @@ namespace Disney_API.Controllers
             Personaje p = personaje;
 
             p.Idpersonaje = _context.Personajes.Count() + 1;
-
+            var movies = personaje.IDMovies.Distinct().ToList();
+            foreach(var movie in movies)
+            {
+                if(_context.Peliculas.Where(x => x.Idpelicula == movie).Any())
+                {
+                    await _context.AddAsync(new Participacion { Idpelicula = movie, Idpersonaje = p.Idpersonaje });
+                    
+                }
+                    
+            }
             await _context.AddAsync(p);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(CrearPersonaje), p);
+            return CreatedAtAction(nameof(CreateCharacter), p);
         }
 
         #endregion
 
         #region PUT
         [HttpPut("{id}")]
+        [AllowAnonymous]
         public async Task<IActionResult> EditCharacter(int id, [FromBody] CharacterUpdate character)
         {
             if (_context == null || !ModelState.IsValid)
@@ -318,6 +325,7 @@ namespace Disney_API.Controllers
 
             Personaje p = character;
             p.Idpersonaje = id;
+
             _context.Personajes.Update(p);
             await _context.SaveChangesAsync();
             return Ok(p);
