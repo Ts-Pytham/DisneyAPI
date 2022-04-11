@@ -161,7 +161,25 @@ namespace Disney_API.Controllers
             Pelicula p = movie;
 
             p.Idpelicula = _context.Peliculas.Count() + 1;
-
+            
+            var listc = movie.IDCharacters.Distinct().ToList();
+            var listg = movie.IDGenres.Distinct().ToList();
+            foreach(var idcharacter in listc)
+            {
+                if(_context.Personajes.Where(x => x.Idpersonaje == idcharacter).Any())
+                {
+                    await _context.AddAsync(new Participacion { Idpelicula = p.Idpelicula, Idpersonaje = idcharacter });
+                }
+            }
+            
+            foreach(var idgenre in listg)
+            {
+                if (_context.Generos.Where(x => x.Idgenero == idgenre).Any())
+                {
+                    await _context.AddAsync(new GeneroPelicula { Idpelicula = p.Idpelicula, Idgenero = idgenre });
+                }
+            }
+            
             await _context.AddAsync(p);
             await _context.SaveChangesAsync();
 
@@ -181,6 +199,45 @@ namespace Disney_API.Controllers
 
             Pelicula p = movie;
             p.Idpelicula = id;
+
+            // Removing movies where movie.IDCharacters > 0 (possibly will changes in the future)
+
+            if (movie.IDCharacters.Count > 0)
+            {
+                var list = _context.Participacions.Where(x => x.Idpelicula == id).ToList();
+                foreach (var character in list)
+                {
+                    _context.Participacions.Remove(character);
+                }
+
+                var characters = movie.IDCharacters.Distinct().ToList();
+                foreach (var idcharacter in characters)
+                {
+                    if (_context.Personajes.Where(x => x.Idpersonaje == idcharacter).Any())
+                    {
+                        await _context.AddAsync(new Participacion { Idpelicula = id, Idpersonaje = idcharacter });
+                    }
+                }
+            }
+
+            // Removing movies where movie.IDGenres > 0 (possibly will changes in the future)
+            if(movie.IDGenres.Count > 0)
+            {
+                var list = _context.GeneroPeliculas.Where(x => x.Idpelicula == id).ToList();
+                foreach (var genre in list)
+                {
+                    _context.GeneroPeliculas.Remove(genre);
+                }
+
+                var genres = movie.IDGenres.Distinct().ToList();
+                foreach (var idgenre in genres)
+                {
+                    if (_context.Generos.Where(x => x.Idgenero == idgenre).Any())
+                    {
+                        await _context.AddAsync(new GeneroPelicula { Idpelicula = id, Idgenero = idgenre });
+                    }
+                }
+            }
             _context.Peliculas.Update(p);
             await _context.SaveChangesAsync();
             return Ok(p);

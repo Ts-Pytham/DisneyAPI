@@ -15,7 +15,7 @@ namespace Disney_API.Models
 
         public static implicit operator Pelicula(MovieCreate v)
         {
-            return new MovieCreate
+            return new Pelicula
             {
                 Imagen = v.Imagen,
                 Titulo = v.Titulo,

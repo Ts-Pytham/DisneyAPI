@@ -321,7 +321,7 @@ namespace Disney_API.Controllers
             if (id <= 0 && _context.Personajes.Where(x => x.Idpersonaje == id).Any() == false)
                 return NotFound("No se encontró el personaje");
 
-            // Removing movies where characters.movies > 0
+            // Removing movies where characters.movies > 0 (possibly will changes in the future)
             
             if(character.IDMovies.Count > 0)
             {
