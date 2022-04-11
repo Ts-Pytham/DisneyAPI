@@ -36,8 +36,9 @@ namespace Disney_API.Controllers
                             })
                             .ToListAsync();
 
-                var result = await task;     
-
+                var result = await task;
+                if (result.Count == 0 || result == null)
+                    return NotFound();
                 return Ok(result);
             }
 
@@ -61,7 +62,7 @@ namespace Disney_API.Controllers
 
 
             var result = await movies;
-            if (result == null)
+            if (result == null || result.Count == 0)
                 return NotFound();
 
             return Ok(result);
@@ -88,6 +89,31 @@ namespace Disney_API.Controllers
             return Ok(result);
         }
 
+        [AllowAnonymous]
+        [HttpGet("genre/{idGenero}")]
+        public async Task<IActionResult> GetMoviesByGenre(int idGenero)
+        {
+            if (_context == null)
+                return BadRequest();
+
+            var list = (
+                            from p in _context.Peliculas
+                            join g in _context.GeneroPeliculas on p.Idpelicula equals g.Idpelicula
+                            where g.Idgenero == idGenero
+                            select new
+                            {
+                                Pelicula = p,
+                                Personaje = GetCharacterById(p.Idpelicula, _context.Participacions.ToList(), _context.Personajes.ToList()),
+                                Genero = GetGenresById(p.Idpelicula, _context.GeneroPeliculas.ToList(), _context.Generos.ToList())
+                            }
+
+                       ).ToListAsync();
+            var result = await list;
+            if (list == null || result.Count == 0)
+                return NotFound();
+
+            return Ok(result);
+        }
         private static dynamic? GetCharacterById(int id, List<Participacion> participacions, List<Personaje> personajes)
         {
             var list = (from pe in participacions

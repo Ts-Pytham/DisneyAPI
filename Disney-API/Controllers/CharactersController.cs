@@ -284,7 +284,6 @@ namespace Disney_API.Controllers
         #endregion
 
         #region POST
-        [AllowAnonymous]
         [HttpPost]
         public async Task<IActionResult> CreateCharacter([FromBody] CharacterCreate? personaje)
         {
@@ -314,7 +313,6 @@ namespace Disney_API.Controllers
 
         #region PUT
         [HttpPut("{id}")]
-        [AllowAnonymous]
         public async Task<IActionResult> EditCharacter(int id, [FromBody] CharacterUpdate character)
         {
             if (_context == null || !ModelState.IsValid)
@@ -323,18 +321,39 @@ namespace Disney_API.Controllers
             if (id <= 0 && _context.Personajes.Where(x => x.Idpersonaje == id).Any() == false)
                 return NotFound("No se encontró el personaje");
 
+            // Removing movies where characters.movies > 0
+            
+            if(character.IDMovies.Count > 0)
+            {
+                var list = _context.Participacions.Where(x => x.Idpersonaje == id).ToList();
+                foreach(var movie in list)
+                {
+                    _context.Participacions.Remove(movie);
+                }
+
+                var movies = character.IDMovies.Distinct().ToList();
+                foreach (var movie in movies)
+                {
+                    if (_context.Peliculas.Where(x => x.Idpelicula == movie).Any())
+                    {
+                        await _context.AddAsync(new Participacion { Idpelicula = movie, Idpersonaje = id });
+
+                    }
+                }
+            }
+            
             Personaje p = character;
             p.Idpersonaje = id;
 
             _context.Personajes.Update(p);
             await _context.SaveChangesAsync();
             return Ok(p);
+            
         }
         #endregion
 
 
-        #region DELETE
-        
+        #region DELETE      
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteCharacterById(int id)
         {
