@@ -1,6 +1,7 @@
 ﻿using Disney_API.Models;
 using Disney_API.Models.Interfaces;
 using Disney_API.Models.Schemes;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +9,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Disney_API.Controllers
 {
     [Route("api/[controller]")]
+    [ApiController]
+    [Authorize]
     public class GenresController : ControllerBase
     {
         private readonly DisneyContext _context;
@@ -20,6 +23,7 @@ namespace Disney_API.Controllers
         #region GET
 
         [HttpGet("")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetGenres()
         {
             if (_context == null)
@@ -46,7 +50,9 @@ namespace Disney_API.Controllers
             return NotFound();
         }
 
+        
         [HttpGet("id/{id}")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetGenreById(int id)
         {
             if (_context == null)
@@ -75,6 +81,7 @@ namespace Disney_API.Controllers
 
         #region POST
         [HttpPost]
+        
         public async Task<IActionResult> CreateGenre([FromBody] GenreCreate genre)
         {
             if (_context == null || !ModelState.IsValid)
