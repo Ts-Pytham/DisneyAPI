@@ -1,8 +1,11 @@
 ﻿using Disney_API.Models;
 using Disney_API.Models.Schemes;
+using Disney_API.ModelBinder;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics;
+
 namespace Disney_API.Controllers
 {
     [Route("api/[controller]")]
@@ -20,26 +23,117 @@ namespace Disney_API.Controllers
         #region GET
         [AllowAnonymous]
         [HttpGet]
-        public async Task<IActionResult> GetMovies()
+        public async Task<IActionResult> GetMovies([FromQuery] GetRequestMovies request)
         {
             if (_context == null)
                 return NotFound();
 
             if (_context.Peliculas.Any())
             {
-                var task = _context.Peliculas.OrderBy(x => x.Idpelicula)
-                            .Select(x => new
-                            {
-                                x.Imagen,
-                                x.Titulo,
-                                x.Fecha
-                            })
-                            .ToListAsync();
+                int cases = 0;
+                if (request.Name != null && request.Genre == null) cases = 1;
+                else if (request.Name == null && request.Genre != null) cases = 2;
+                else if (request.Name != null && request.Genre != null) cases = 3;
 
-                var result = await task;
-                if (result.Count == 0 || result == null)
-                    return NotFound();
-                return Ok(result);
+                request.Order = request.Order.ToUpper();
+
+                if (request.Order != "ASC" && request.Order != "DESC")
+                    request.Order = "ASC";
+
+                if (cases == 0)
+                {
+                    var task = _context.Peliculas.OrderBy(x => x.Idpelicula)
+                                .Select(x => new
+                                {
+                                    x.Imagen,
+                                    x.Titulo,
+                                    x.Fecha
+                                })
+                                .ToListAsync();
+
+                    var result = await task;
+                    if (result.Count == 0 || result == null)
+                        return NotFound();
+
+                    if (request.Order == "ASC")
+                    {
+                        result = result.OrderBy(x => x.Fecha).ToList();
+                    }
+                    else
+                    {
+                        result = result.OrderByDescending(x => x.Fecha).ToList();
+                    }
+
+                    return Ok(result);
+                }
+                else if (cases == 1)
+                    return await GetMoviesByName(request?.Name!, request?.Order!);
+                else if (cases == 2)
+                    return await GetMoviesByGenre(request.Genre.GetValueOrDefault(), request?.Order!);
+                else
+                {
+                    var list1 = (from p in _context.Peliculas
+                                 where p.Titulo == request.Name
+                                 select new
+                                 {
+                                      p.Idpelicula,
+                                      p.Imagen,
+                                      p.Titulo,
+                                      p.Fecha,
+                                      p.Calificacion
+
+                                 }).ToListAsync();
+
+                    var result1 = await list1;
+
+                    var list2 = (from p in _context.Peliculas
+                                 join gp in _context.GeneroPeliculas on p.Idpelicula equals gp.Idpelicula
+                                 where gp.Idgenero == request.Genre.GetValueOrDefault()
+                                 select new
+                                 {
+                                     p.Idpelicula,
+                                     p.Imagen,
+                                     p.Titulo,
+                                     p.Fecha,
+                                     p.Calificacion
+
+                                 }).Distinct().ToListAsync();
+
+                    var result2 = await list2;
+                    if(request.Name == null)
+                    {
+                        result1 = result2;
+                    }
+                    if(request.Genre == null)
+                    {
+                        result2 = result1;
+                    }
+
+                    var Intersect = result1.Intersect(result2).ToList();
+
+                    if (!Intersect.Any())
+                        return NotFound();
+
+                    var result = (from p in Intersect
+                                  select new
+                                  {
+                                      p.Idpelicula,
+                                      p.Imagen,
+                                      p.Titulo,
+                                      p.Fecha,
+                                      p.Calificacion,
+                                      Personaje = GetCharacterById(p.Idpelicula, _context.Participacions.ToList(), _context.Personajes.ToList()),
+                                      Genero = GetGenresById(p.Idpelicula, _context.GeneroPeliculas.ToList(), _context.Generos.ToList())
+                                  }
+                               ).ToList();
+                    if (request.Order == "ASC")
+                        result = result.OrderBy(x => x.Fecha).ToList();
+                    else
+                        result = result.OrderByDescending(x => x.Fecha).ToList();
+
+                    return Ok(result);
+
+                }
             }
 
             return NotFound();
@@ -69,7 +163,7 @@ namespace Disney_API.Controllers
         }
         [AllowAnonymous]
         [HttpGet("name/{nombre}")]
-        public async Task<IActionResult> GetMoviesByName(string nombre)
+        public async Task<IActionResult> GetMoviesByName(string nombre, string order = "ASC")
         {
             if (_context == null)
                 return NotFound();
@@ -83,6 +177,11 @@ namespace Disney_API.Controllers
                           }).ToListAsync();
 
             var result = await movies;
+            if (order == "ASC")
+                result = result.OrderBy(x => x.Pelicula.Fecha).ToList();
+            else
+                result = result.OrderByDescending(x => x.Pelicula.Fecha).ToList();
+
             if (result == null || result.Count == 0)
                 return NotFound();
 
@@ -91,7 +190,7 @@ namespace Disney_API.Controllers
 
         [AllowAnonymous]
         [HttpGet("genre/{idGenero}")]
-        public async Task<IActionResult> GetMoviesByGenre(int idGenero)
+        public async Task<IActionResult> GetMoviesByGenre(int idGenero, string order = "ASC")
         {
             if (_context == null)
                 return BadRequest();
@@ -109,6 +208,12 @@ namespace Disney_API.Controllers
 
                        ).ToListAsync();
             var result = await list;
+
+            if (order == "ASC")
+                result = result.OrderBy(x => x.Pelicula.Fecha).ToList();
+            else
+                result = result.OrderByDescending(x => x.Pelicula.Fecha).ToList();
+
             if (list == null || result.Count == 0)
                 return NotFound();
 
