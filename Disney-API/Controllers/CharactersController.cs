@@ -359,8 +359,7 @@ namespace Disney_API.Controllers
         {
             if(_context == null)
                 return BadRequest();
-            var list = await _context.Personajes.Where(x => x.Idpersonaje == id).ToListAsync();
-            var p = list.Count > 0 ? list[0] : null;
+            var p = await _context.Personajes.Where(x => x.Idpersonaje == id).FirstOrDefaultAsync();
             if(p == null)
                 return NotFound("No se encontró el personaje");
 

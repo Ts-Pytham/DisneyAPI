@@ -243,5 +243,31 @@ namespace Disney_API.Controllers
             return Ok(p);
         }
         #endregion
+
+        #region Delete
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteMovie(int id)
+        {
+            if (_context == null)
+                return BadRequest();
+
+            if (_context.Peliculas.Any())
+            {
+                var task = _context.Peliculas.Where(x => x.Idpelicula == id)
+                            .FirstOrDefaultAsync();
+
+                var result = await task;
+                if (result == null)
+                    return NotFound();
+                _context.Peliculas.Remove(result);
+                await _context.SaveChangesAsync();
+                return Ok(result);
+            }
+
+            return NotFound();
+        }
+        #endregion
     }
+
+    
 }
