@@ -5,6 +5,8 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using DotEnv.Core;
+using Microsoft.OpenApi.Models;
+using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,7 +24,27 @@ builder.Services.AddAuthentication("BasicAuthentication")
 */
 builder.Services.AddSwaggerGen(options =>
 {
-        options.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
+    options.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Autorización de jwt usando Bearer"
+    });
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement {
+        {
+            new OpenApiSecurityScheme {
+                    Reference = new OpenApiReference {
+                        Type = ReferenceType.SecurityScheme,
+                        Id = "Bearer"
+                    }
+                },
+            Array.Empty<string>()
+        }
+    });
 }
 );
 builder.Services.AddControllers(opt => {
@@ -30,23 +52,31 @@ builder.Services.AddControllers(opt => {
 });
 
 var env = new EnvLoader();
+
 env.AddEnvFile("Config.env")
    .Load();
 var reader = new EnvReader();
+
 var key = Encoding.ASCII.GetBytes(reader["SecretKey"]);
 
-builder.Services.AddAuthentication(x => {
+builder.Services
+    .AddAuthorization()
+    .AddHttpContextAccessor()
+    .AddAuthentication(x => {
     x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 }).AddJwtBearer(x => {
+
     x.RequireHttpsMetadata = false;
     x.SaveToken = true;
     x.TokenValidationParameters = new TokenValidationParameters
     {
+
         ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(key),
         ValidateIssuer = false,
-        ValidateAudience = false
+        ValidateAudience = false,
+        IssuerSigningKey = new SymmetricSecurityKey(key),
+
     };
 });
 

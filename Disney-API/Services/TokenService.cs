@@ -1,5 +1,6 @@
 ﻿using DotEnv.Core;
 using Microsoft.IdentityModel.Tokens;
+using System.Diagnostics;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -17,7 +18,8 @@ namespace Disney_API.Services
 
         public string GetToken(string Email)
         {
-            var secretKey = reader["SENDGRID_API_KEY"];
+            var secretKey = reader["SecretKey"];
+            Debug.WriteLine(secretKey);
             var key = Encoding.ASCII.GetBytes(secretKey!);
 
             var claims = new ClaimsIdentity();

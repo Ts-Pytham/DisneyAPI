@@ -57,7 +57,7 @@ namespace Disney_API.Controllers
             string Subject = "DISNEY API, Registro exitoso";
             var reader = new EnvReader();
             
-            var send = new Utilities.SendGrid(reader["SecretKey"], EmailFrom, UserEmailFrom, UserEmailTo, Subject, EmailTo, PlainTextContent, HtmlContent); ;
+            var send = new Utilities.SendGrid(reader["SENDGRID_API_KEY"], EmailFrom, UserEmailFrom, UserEmailTo, Subject, EmailTo, PlainTextContent, HtmlContent); ;
             await send.SendEmail();
             return CreatedAtAction(nameof(Register), user);
 
